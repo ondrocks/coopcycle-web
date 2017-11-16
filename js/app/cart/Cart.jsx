@@ -6,6 +6,7 @@ import Sticky from 'react-stickynode';
 import CartItem from './CartItem.jsx';
 import DatePicker from './DatePicker.jsx';
 import AddressPicker from "../address/AddressPicker.jsx";
+import CartTop from "./CartTop.jsx"
 import { geocodeByAddress } from 'react-places-autocomplete';
 
 import numeral  from 'numeral';
@@ -20,7 +21,7 @@ class Cart extends React.Component
   constructor(props) {
     super(props);
 
-    let { items, deliveryDate, streetAddress, isMobileCart, geohash } = this.props;
+    let { items, deliveryDate, streetAddress, isMobileCart, geohash, flatDeliveryPrice } = this.props;
 
     this.state = {
       items,
@@ -36,10 +37,18 @@ class Cart extends React.Component
     this.onAddressSelect = this.onAddressSelect.bind(this)
     this.onHeaderClick = this.onHeaderClick.bind(this)
     this.handleAjaxErrors = this.handleAjaxErrors.bind(this)
+    this.computeCartTotal = this.computeCartTotal.bind(this)
   }
 
   onHeaderClick () {
     this.setState({'toggled': !this.state.toggled})
+  }
+
+  computeCartTotal () {
+    let itemsTotalPrice = _.reduce(this.state.items, function(memo, item) {
+      return memo + (item.total);
+    }, 0)
+      return (itemsTotalPrice + this.props.flatDeliveryPrice).toFixed(2)
   }
 
   removeItem(item) {
@@ -49,6 +58,8 @@ class Cart extends React.Component
       type: 'DELETE',
     }).then((cart) => {
       this.setState({items: cart.items});
+      let total = this.computeCartTotal();
+      this.props.onCartChange(total);
     });
   }
 
@@ -62,6 +73,8 @@ class Cart extends React.Component
     }).then((cart) => {
       let errors = {...this.state.errors, item: null}
       this.setState({items: cart.items, errors});
+      let total = this.computeCartTotal();
+      this.props.onCartChange(total);
     }).fail((e) => { this.handleAjaxErrors(e.responseJSON) })
   }
 
@@ -132,7 +145,7 @@ class Cart extends React.Component
 
   render() {
 
-    let { items, toggled, errors, date, geohash, address} = this.state ,
+    let { items, toggled, errors, date, geohash, address } = this.state,
         cartContent,
         cartWarning,
         { isMobileCart, availabilities, validateCartURL, minimumCartAmount, flatDeliveryPrice } = this.props,
@@ -242,6 +255,7 @@ class Cart extends React.Component
     );
   }
 }
+
 
 Cart.propTypes = {
   items: PropTypes.arrayOf(PropTypes.object),
