@@ -110,24 +110,38 @@
   </div>
 </div>
 
-<div id='cart-warning-modal' class="modal fade" tabindex="-1" role="dialog">
+<div id="cart-warning-modal" class="modal fade" tabindex="-1" role="dialog">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title">{{'cart.modal.title'|trans}}</h4>
+        <h4 class="modal-title">{{ 'cart.modal.title'|trans }}</h4>
       </div>
       <div class="modal-body">
-        <p>{{'cart.modal.content'|trans}}</p>
+        <p>{{ 'cart.modal.content'|trans }}</p>
       </div>
       <div class="modal-footer">
-        <button id='cart-warning-default' type="button" class="btn btn-default" data-dismiss="modal">{{'cart.modal.cancel'|trans }}</button>
-        <button id='cart-warning-primary' type="button" class="btn btn-primary">{{ 'cart.modal.confirm'|trans}}</button>
+        <button id="cart-warning-default" type="button" class="btn btn-default" data-dismiss="modal">
+          {{ 'cart.modal.cancel'|trans }}
+        </button>
+        <button id="cart-warning-primary" type="button" class="btn btn-primary">{{ 'cart.modal.confirm'|trans }}</button>
       </div>
     </div>
   </div>
 </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.AppData = window.AppData || {};
+window.AppData.availabilities = {{ availabilities|json_encode()|raw }};
+window.AppData.Restaurant = {
+  id: {{ restaurant.id }},
+  minimumCartAmount: {{ restaurant.minimumCartAmount }},
+  flatDeliveryPrice: {{ restaurant.flatDeliveryPrice }}
+};
+</script>
 <script src="https://maps.googleapis.com/maps/api/js?key={{ google_api_key }}&libraries=places"></script>
 {% endblock %}
 

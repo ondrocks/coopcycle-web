@@ -12,19 +12,21 @@ var topCartComponent;
 var cart = document.getElementById('cart');
 var cartComponent;
 
-var restaurantId = window.AppData.restaurantId
-var sessionCartRestaurantId = window.AppData.sessionCartRestaurantId
-var isSessionCartForCurrentRestaurant = restaurantId == sessionCartRestaurantId
+let restaurantChangeWarning = false
 
-var itemsTotal = window.AppData.sessionCartTotal ? window.AppData.sessionCartTotal : '0';
-var total = parseFloat(itemsTotal + window.AppData.Cart.flatDeliveryPrice).toFixed(2);
+// It means we are on a restaurant page
+if (window.AppData.Restaurant && window.AppData.Cart.restaurant) {
+  if (window.AppData.Restaurant.id !== window.AppData.Cart.restaurant.id) {
+    restaurantChangeWarning = true
+  }
+}
 
 if (topCart) {
 
   topCartComponent = render(
     <CartTop
       restaurantUrl={window.AppData.topCartRedirectURL}
-      total={total}
+      total={window.AppData.Cart.total}
       i18n={window.__i18n} />,
     topCart
   );
@@ -78,24 +80,23 @@ if (cart) {
           deliveryDate={initialDate}
           availabilities={availabilities}
           items={window.AppData.Cart.items}
+          restaurant={window.AppData.Restaurant}
           addToCartURL={window.AppData.Cart.addToCartURL}
           removeFromCartURL={window.AppData.Cart.removeFromCartURL}
           validateCartURL={window.AppData.Cart.validateCartURL}
-          minimumCartAmount={window.AppData.Cart.minimumCartAmount}
-          flatDeliveryPrice={window.AppData.Cart.flatDeliveryPrice}
           isMobileCart={ isXsDevice }
           onCartChange={total => topCartComponent.setTotal(total)}
         />,
     cart);
 
   $('.js-add-to-cart').on('click', function(e) {
-      if (!isSessionCartForCurrentRestaurant && sessionCartRestaurantId) {
+      if (restaurantChangeWarning) {
         $('#cart-warning-modal').modal('show');
         $('#cart-warning-primary').on('click', function(ev) {
-            // remove the session cart
-            isSessionCartForCurrentRestaurant = true;
+            restaurantChangeWarning = false;
             $('#cart-warning-modal').modal('hide');
-            addItemToBasket(e);});
+            addItemToBasket(e);
+        });
       } else {
         addItemToBasket(e);
       }

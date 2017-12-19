@@ -21,7 +21,7 @@ class Cart extends React.Component
   constructor(props) {
     super(props);
 
-    let { items, deliveryDate, streetAddress, isMobileCart, geohash, flatDeliveryPrice } = this.props;
+    let { items, deliveryDate, streetAddress, isMobileCart, geohash } = this.props;
 
     this.state = {
       items,
@@ -40,21 +40,43 @@ class Cart extends React.Component
     this.computeCartTotal = this.computeCartTotal.bind(this)
   }
 
-  onHeaderClick () {
+  onHeaderClick() {
     this.setState({'toggled': !this.state.toggled})
   }
 
-  computeCartTotal () {
-    let itemsTotalPrice = _.reduce(this.state.items, function(memo, item) {
-      return memo + (item.total);
+  computeCartTotal() {
+
+    // Sum delivery price when there is at least one item
+    if (this.state.items.length === 0) {
+      return 0
+    }
+
+    const { flatDeliveryPrice } = this.props.restaurant
+
+    const itemsTotalPrice = _.reduce(this.state.items, function(memo, item) {
+      return memo + item.total;
     }, 0)
-      return (itemsTotalPrice + this.props.flatDeliveryPrice).toFixed(2)
+
+    return (itemsTotalPrice + flatDeliveryPrice).toFixed(2)
+  }
+
+  resolveAddToCartURL() {
+    const { addToCartURL, restaurant } = this.props
+
+    return addToCartURL.replace('__RESTAURANT_ID__', restaurant.id)
+  }
+
+  resolveRemoveFromCartURL(itemKey) {
+    const { removeFromCartURL, restaurant } = this.props
+
+    return removeFromCartURL
+      .replace('__RESTAURANT_ID__', restaurant.id)
+      .replace('__ITEM_KEY__', itemKey)
   }
 
   removeItem(item) {
-    let removeFromCartUrl = this.props.removeFromCartURL.replace('__ITEM_KEY__', item.props.itemKey);
     $.ajax({
-      url: removeFromCartUrl,
+      url: this.resolveRemoveFromCartURL(item.props.itemKey),
       type: 'DELETE',
     }).then((cart) => {
       this.setState({items: cart.items});
@@ -64,7 +86,7 @@ class Cart extends React.Component
   }
 
   addMenuItemById(id, modifiers) {
-    $.post(this.props.addToCartURL, {
+    $.post(this.resolveAddToCartURL(), {
       selectedItemData: {
         menuItemId: id,
         modifiers: modifiers
@@ -83,7 +105,7 @@ class Cart extends React.Component
   }
 
   onDateChange(dateString) {
-    $.post(this.props.addToCartURL, {
+    $.post(this.resolveAddToCartURL(), {
       date: dateString,
     }).then(() => {
       let errors = {...this.state.errors, date: null}
@@ -118,7 +140,7 @@ class Cart extends React.Component
           'streetAddress': addressDict.streetAddress || '',
         }
 
-        $.post(this.props.addToCartURL, {
+        $.post(this.resolveAddToCartURL(), {
           date: this.state.date, // do not remove this line (used to set `date` on `componentDidMount` event)
           address: address
         }).then(() => {
@@ -140,6 +162,7 @@ class Cart extends React.Component
   }
 
   componentDidMount() {
+    // FIXME this.props.geohash & this.props.streetAddress may be empty
     this.onAddressChange(this.props.geohash, this.props.streetAddress)
   }
 
@@ -148,7 +171,8 @@ class Cart extends React.Component
     let { items, toggled, errors, date, geohash, address } = this.state,
         cartContent,
         cartWarning,
-        { isMobileCart, availabilities, validateCartURL, minimumCartAmount, flatDeliveryPrice } = this.props,
+        { isMobileCart, availabilities, validateCartURL } = this.props,
+        { minimumCartAmount, flatDeliveryPrice } = this.props.restaurant,
         minimumCartString = 'Le montant minimum est de ' + minimumCartAmount + '€',
         cartTitleKey = isMobileCart ? 'cart.widget.button' : 'Cart'
 
@@ -260,14 +284,13 @@ class Cart extends React.Component
 Cart.propTypes = {
   items: PropTypes.arrayOf(PropTypes.object),
   streetAddress: PropTypes.string.isRequired,
-  minimumCartAmount: PropTypes.number.isRequired,
-  flatDeliveryPrice: PropTypes.number.isRequired,
   deliveryDate: PropTypes.string.isRequired,
   availabilities: PropTypes.arrayOf(PropTypes.string).isRequired,
   validateCartURL: PropTypes.string.isRequired,
   removeFromCartURL: PropTypes.string.isRequired,
   addToCartURL: PropTypes.string.isRequired,
-  isMobileCart: PropTypes.bool.isRequired
+  isMobileCart: PropTypes.bool.isRequired,
+  restaurant: PropTypes.object.isRequired
 }
 
 
