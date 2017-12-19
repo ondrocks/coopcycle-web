@@ -25,7 +25,8 @@ if (topCart) {
 
   topCartComponent = render(
     <CartTop
-      restaurantUrl={window.AppData.topCartRedirectURL}
+      restaurantURL={window.AppData.Cart.restaurantURL}
+      restaurant={window.AppData.Cart.restaurant}
       total={window.AppData.Cart.total}
       i18n={window.__i18n} />,
     topCart
@@ -94,6 +95,7 @@ if (cart) {
         $('#cart-warning-modal').modal('show');
         $('#cart-warning-primary').on('click', function(ev) {
             restaurantChangeWarning = false;
+            topCartComponent.setRestaurant(window.AppData.Restaurant);
             $('#cart-warning-modal').modal('hide');
             addItemToBasket(e);
         });

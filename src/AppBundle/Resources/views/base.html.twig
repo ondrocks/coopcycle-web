@@ -82,9 +82,6 @@
         restaurantURL: "{{ path('restaurant', { 'id': '__RESTAURANT_ID__' }) }}",
         validateCartURL: "{{ path('order') }}"
       };
-
-      window.AppData.topCartRedirectURL = {% if cart is not empty %}"{{ path('restaurant', { 'id': cart.restaurant.id }) }}"{% else %}null{% endif %};
-
     </script>
     {% block scripts %}{% endblock %}
     <script src="{{ asset('js/cart.js') }}"></script>
