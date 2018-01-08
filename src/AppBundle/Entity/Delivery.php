@@ -110,7 +110,21 @@ class Delivery extends Intangible implements TaxableInterface
      * @ORM\Column(type="datetime")
      * @Assert\NotBlank(groups={"order"})
      */
-    private $date;
+    private $pickupTimeStart;
+
+    /**
+     * @Groups({"delivery", "order"})
+     * @ORM\Column(type="datetime")
+     * @Assert\NotBlank(groups={"order"})
+     */
+    private $pickupTimeEnd;
+
+    /**
+     * @Groups({"delivery", "order"})
+     * @ORM\Column(type="datetime")
+     * @Assert\NotBlank(groups={"order"})
+     */
+    private $dropoffTime;
 
     /**
      * @ORM\Column(type="integer")
@@ -212,12 +226,12 @@ class Delivery extends Intangible implements TaxableInterface
 
     public function getDate()
     {
-        return $this->date;
+        return $this->dropoffTime;
     }
 
     public function setDate($date)
     {
-        $this->date = $date;
+        $this->dropoffTime = $date;
 
         return $this;
     }
