@@ -26,17 +26,21 @@ use AppBundle\Form\PricingRuleSetType;
 use AppBundle\Form\RestaurantMenuType;
 use AppBundle\Form\UpdateProfileType;
 use AppBundle\Form\GeoJSONUploadType;
+use AppBundle\Form\TaskExportType;
 use AppBundle\Form\TaskUploadType;
 use AppBundle\Form\TaskType;
 use AppBundle\Form\ZoneCollectionType;
 use AppBundle\Service\DeliveryPricingManager;
 use Doctrine\Common\Collections\ArrayCollection;
 use FOS\UserBundle\Model\UserInterface;
+use League\Csv\Writer as CsvWriter;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\RequestContext;
 
 class AdminController extends Controller
@@ -136,6 +140,8 @@ class AdminController extends Controller
 
         $newTaskForm = $this->createForm(TaskType::class, $task);
 
+        $taskExportForm = $this->createForm(TaskExportType::class);
+
         $taskUploadForm->handleRequest($request);
         if ($taskUploadForm->isSubmitted()) {
             if ($taskUploadForm->isValid()) {
@@ -170,6 +176,39 @@ class AdminController extends Controller
                 ->flush();
 
             return $this->redirectToDashboard($request);
+        }
+
+        $taskExportForm->handleRequest($request);
+        if ($taskExportForm->isSubmitted() && $taskExportForm->isValid()) {
+
+            $assignedTasks = $this->getDoctrine()
+                ->getRepository(Task::class)
+                ->findAssigned($date);
+
+            $csv = CsvWriter::createFromString('');
+            $csv->insertOne(['#', 'type', 'address.streetAddress', 'status', 'event.DONE.notes']);
+
+            $records = [];
+            foreach ($assignedTasks as $task) {
+                $records[] = [
+                    $task->getId(),
+                    $task->getType(),
+                    $task->getAddress()->getStreetAddress(),
+                    $task->getStatus(),
+                    $task->hasEvent(Task::STATUS_DONE) ? $task->getFirstEvent(Task::STATUS_DONE)->getNotes() : ''
+                ];
+            }
+            $csv->insertAll($records);
+
+            $filename = sprintf('tasks-%s.csv', $date->format('Y-m-d'));
+
+            $response = new Response($csv->getContent());
+            $response->headers->set('Content-Disposition', $response->headers->makeDisposition(
+                ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+                $filename
+            ));
+
+            return $response;
         }
 
         $tasks = $this->getDoctrine()
@@ -223,6 +262,7 @@ class AdminController extends Controller
             'tasks' => $tasks,
             'task_lists' => $taskListsNormalized,
             'task_upload_form' => $taskUploadForm->createView(),
+            'task_export_form' => $taskExportForm->createView(),
             'new_task_form' => $newTaskForm->createView(),
         ]);
     }
